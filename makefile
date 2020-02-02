@@ -1,4 +1,4 @@
-OBJS = main.cpp ./Renderer/Renderer.cpp ./TextureLoader/TextureLoader.cpp
+OBJS = ./src/main.cpp ./src/Renderer/Renderer.cpp ./src/TextureLoader/TextureLoader.cpp
 LINK_OBJS = main.o Renderer.o TextureLoader.o
 LINKER_OPTIONS =  -lSDL2 -lGLEW -lGLU -lGL
 OBJ_NAME = exper
