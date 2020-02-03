@@ -1,4 +1,4 @@
-OBJS = ./src/main.cpp ./src/Renderer/Renderer.cpp ./src/Shader/Shader.cpp
+OBJS = ./src/main.cpp ./src/Renderer/Renderer.cpp ./src/Shader/Shader.cpp ./src/Terrain/Terrain.cpp
 LINK_OBJS = main.o Renderer.o Shader.o
 LINKER_OPTIONS =  -lSDL2 -lGLEW -lGLU -lGL
 OBJ_NAME = exper
