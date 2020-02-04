@@ -12,6 +12,7 @@
 
 /* Include the Shader class */
 #include "../Shader/Shader.h"
+#include "../Terrain/Terrain.h"
 
 #include <string>
 #include <iostream>
@@ -27,10 +28,10 @@ private:
 	int windowWidth, windowHeight;
 	bool running = true;
 	void printError(std::string error);
-	int render();
+	int render(std::vector<Vertex3> terrainPoints, GLuint vertexArrayObject, GLuint vertexBufferObject);
 public:
 	Renderer(int width, int height);
-	int start();
+	int start(Terrain terrain);
 };
 
 #endif

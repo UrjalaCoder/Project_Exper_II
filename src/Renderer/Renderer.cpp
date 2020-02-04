@@ -55,23 +55,22 @@ void Renderer::printError(std::string error)
 	std::cout << "[ERROR]: " << error << std::endl;
 }
 
-int Renderer::render()
+int Renderer::render(std::vector<Vertex3> terrainPoints, GLuint vertexArrayObject, GLuint vertexBufferObject)
 {
-	GLfloat vertices[] = {
-		-0.5f, -0.5f, 0.0f,
-		 0.5f, -0.5f, 0.0f,
-		 0.0f,  0.5f, 0.0f
-	};
+	GLfloat vertices[terrainPoints.size() * 3];
+	for(int i = 0; i < terrainPoints.size(); i++)
+	{
+		int vertexIndex = i * 3;
+		vertices[vertexIndex] = (float)terrainPoints[i].x;
+		vertices[vertexIndex + 1] = (float)terrainPoints[i].y;
+		vertices[vertexIndex + 2] = (float)terrainPoints[i].z;
+	}
 
 	/* Start with the vertex array object */
 
-	GLuint vertexArrayObject;
-	glGenVertexArrays(1, &vertexArrayObject);
 	glBindVertexArray(vertexArrayObject);
 
 	/* Configure the VBO */
-	GLuint vertexBufferObject;
-	glGenBuffers(1, &vertexBufferObject);
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
 
 	/* Add vertex data */
@@ -85,31 +84,45 @@ int Renderer::render()
 
 	shader->use();
 	glBindVertexArray(vertexArrayObject);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	glDrawArrays(GL_TRIANGLES, 0, terrainPoints.size());
 
 	return 0;
 }
 
-int Renderer::start()
+int Renderer::start(Terrain terrain)
 {
+
+	int middleX = terrain.terrainWidth / 2;
+
+	double movement = 0.05f;
+
 	shader->use();
 	glm::mat4 model(1.0f);
-	model = glm::rotate(model, glm::radians(-80.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
 	GLint modelLocation = glGetUniformLocation(shader->ID, "model");
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
 
 	glm::mat4 view(1.0f);
-	view = glm::translate(view, glm::vec3(0.0, 0.0, -3.0f));
+	view = glm::translate(view, glm::vec3((float)-middleX, -30.0f, -160.0f));
 
 	GLint viewLocation = glGetUniformLocation(shader->ID, "view");
 	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
 
 	glm::mat4 projection(1.0f);
-	projection = glm::perspective(glm::radians(45.0f), (float)this->windowWidth / (float)this->windowHeight, 0.1f, 100.0f);
+	projection = glm::perspective(glm::radians(45.0f), (float)this->windowWidth / (float)this->windowHeight, 0.1f, 400.0f);
 
 	GLint projectionLocation = glGetUniformLocation(shader->ID, "projection");
 	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
+
+	GLuint vertexArrayObject;
+	glGenVertexArrays(1, &vertexArrayObject);
+
+	GLuint vertexBufferObject;
+	glGenBuffers(1, &vertexBufferObject);
+
+	glEnable(GL_DEPTH_TEST);
+	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 
 	while(this->running)
 	{
@@ -122,9 +135,11 @@ int Renderer::start()
 		}
 
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	    glClear(GL_COLOR_BUFFER_BIT);
+	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		this->render();
+		this->render(terrain.getGeometry(), vertexArrayObject, vertexBufferObject);
+
+		terrain.move(movement);
 
 	    SDL_GL_SwapWindow(this->currentWindow);
 	}
