@@ -1,7 +1,9 @@
 #version 330 core
-out vec4 col;
+out vec4 Fragment_Col;
+
+in float outCol;
 
 void main()
 {
-	col = vec4(0.8, 0.8, 0.8, 0.6);
+	Fragment_Col = vec4(outCol, outCol, outCol, 0.6);
 }

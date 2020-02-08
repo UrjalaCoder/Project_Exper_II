@@ -64,6 +64,8 @@ int Renderer::render(std::vector<Vertex3> terrainPoints, GLuint vertexArrayObjec
 		vertices[vertexIndex] = (float)terrainPoints[i].x;
 		vertices[vertexIndex + 1] = (float)terrainPoints[i].y;
 		vertices[vertexIndex + 2] = (float)terrainPoints[i].z;
+
+		// std::cout << vertices[vertexIndex + 5] << std::endl;
 	}
 
 	/* Start with the vertex array object */
@@ -94,23 +96,23 @@ int Renderer::start(Terrain terrain)
 
 	int middleX = terrain.terrainWidth / 2;
 
-	double movement = 0.05f;
+	double movement = 0.02f;
 
 	shader->use();
 	glm::mat4 model(1.0f);
-	model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	model = glm::rotate(model, glm::radians(-70.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
 	GLint modelLocation = glGetUniformLocation(shader->ID, "model");
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
 
 	glm::mat4 view(1.0f);
-	view = glm::translate(view, glm::vec3((float)-middleX, -30.0f, -160.0f));
+	view = glm::translate(view, glm::vec3((float)-middleX, -20.0f, -80.0f));
 
 	GLint viewLocation = glGetUniformLocation(shader->ID, "view");
 	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
 
 	glm::mat4 projection(1.0f);
-	projection = glm::perspective(glm::radians(45.0f), (float)this->windowWidth / (float)this->windowHeight, 0.1f, 400.0f);
+	projection = glm::perspective(glm::radians(45.0f), (float)this->windowWidth / (float)this->windowHeight, 0.1f, 700.0f);
 
 	GLint projectionLocation = glGetUniformLocation(shader->ID, "projection");
 	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
@@ -122,7 +124,11 @@ int Renderer::start(Terrain terrain)
 	glGenBuffers(1, &vertexBufferObject);
 
 	glEnable(GL_DEPTH_TEST);
-	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+	// glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+
+	// FPS counter
+	unsigned int lastTime = SDL_GetTicks();
+	unsigned int frameCount = 0;
 
 	while(this->running)
 	{
@@ -137,7 +143,15 @@ int Renderer::start(Terrain terrain)
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		if(SDL_GetTicks() - lastTime > 1000) {
+			std::cout << "FPS: " << frameCount << std::endl;
+			frameCount = 0;
+			lastTime = SDL_GetTicks();
+		}
+
 		this->render(terrain.getGeometry(), vertexArrayObject, vertexBufferObject);
+
+		frameCount++;
 
 		terrain.move(movement);
 

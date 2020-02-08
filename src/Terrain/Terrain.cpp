@@ -1,6 +1,6 @@
 #include "Terrain.h"
 
-const unsigned int SEED = 1013;
+const unsigned int SEED = 523;
 
 Terrain::Terrain(int width, int height, double offset)
 {
@@ -22,9 +22,9 @@ std::vector<Vertex3> Terrain::getGeometry()
 
 	double vertexYOff = 0;
 	double yOff = currentOffset;
-	double movement = 0.14;
-	double geometryDensity = 4.0;
-	double outputEnd = 80;
+	double movement = 0.10;
+	double geometryDensity = 6.0;
+	double outputEnd = 100;
 	while(vertexYOff < terrainHeight)
 	{
 		double xOff = 0;
