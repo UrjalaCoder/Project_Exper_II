@@ -218,7 +218,7 @@ int Renderer::start(Terrain terrain)
 
 	int middleX = terrain.terrainWidth / 2;
 
-	double movement = 0.02f;
+	double movement = 0.04f;
 
 	shader->use();
 	glm::mat4 model(1.0f);
@@ -259,6 +259,15 @@ int Renderer::start(Terrain terrain)
 	// FPS counter
 	unsigned int lastTime = SDL_GetTicks();
 	unsigned int frameCount = 0;
+	unsigned int updateCount = 0;
+
+	float frameRate = 60.0;
+	float updateRate = 60.0;
+
+	unsigned int lastFrameDrawTick, lastUpdateTick = SDL_GetTicks();
+	double frameMillis = (1.0 / frameRate) * 1000;
+	double updateMillis = (1.0 / updateRate) * 1000;
+	std::cout << "frameMillis: " << frameMillis << std::endl;
 
 	// Background color.
 	glm::vec4 clearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -272,27 +281,41 @@ int Renderer::start(Terrain terrain)
 				this->running = false;
 			}
 		}
+		unsigned int now = SDL_GetTicks();
 
 		glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
 
 	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		if(SDL_GetTicks() - lastTime > 1000) {
-			std::cout << "FPS: " << frameCount << std::endl;
-			frameCountText = std::to_string(frameCount);
+		// Framerate counter
+		if(now - lastTime > 1000) {
+			std::cout << "FPS: " << frameCount << " TICKS: " << updateCount << std::endl;
+			frameCountText = std::to_string(frameCount) + "/" + std::to_string(updateCount);
 			frameCount = 0;
-			lastTime = SDL_GetTicks();
+			updateCount = 0;
+			lastTime = now;
 		}
-		// Render Text.
-		this->renderText(frameCountText, 1.0f, (float)windowHeight - 35.0f, 0.8f, glm::vec3(0.5, 0.8f, 0.2f));
-		// Terrain rendering.
-		this->render(terrain.getGeometry(), vertexArrayObject, vertexBufferObject);
 
-		frameCount++;
+		// MAIN_UPDATE.
+		if((double)(now - lastUpdateTick) > updateMillis) {
+			lastUpdateTick = SDL_GetTicks();
+			updateCount++;
+			terrain.move(movement);
+		}
 
-		terrain.move(movement);
+		// MAIN_RENDER
+		double renderTick = (double)(now - lastFrameDrawTick);
+		// std::cout << renderTick << std::endl;
+		if(((double)(now - lastFrameDrawTick) > frameMillis)) {
+			lastFrameDrawTick = SDL_GetTicks();
+			// Render Text.
+			this->renderText(frameCountText, 1.0f, (float)windowHeight - 20.0f, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
+			// Terrain rendering.
+			this->render(terrain.getGeometry(), vertexArrayObject, vertexBufferObject);
+			frameCount++;
+			SDL_GL_SwapWindow(this->currentWindow);
+		}
 
-	    SDL_GL_SwapWindow(this->currentWindow);
 	}
 	SDL_GL_DeleteContext(this->context);
 	SDL_DestroyWindow(this->currentWindow);
