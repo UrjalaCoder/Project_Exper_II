@@ -15,7 +15,6 @@ Renderer::Renderer(int width, int height)
 
     /* Try to initialize SDL2 */
     if(SDL_Init(SDL_INIT_EVERYTHING) < 0) {
-        // error = true;
 		std::cout << SDL_GetError() << std::endl;
         this->printError("Failed to init!");
     } else {
@@ -45,9 +44,10 @@ Renderer::Renderer(int width, int height)
         }
     }
 
-    /* Done initialization! */
-	/* Finally load shaders that we need. */
 	shader = new Shader("./src/shaders/vertex_shader.glsl", "./src/shaders/fragment_shader.glsl");
+	textShader = new Shader("./src/shaders/vertex_text_shader.glsl", "./src/shaders/fragment_text_shader.glsl");
+	// Initialize FreeType2
+	initializeTextRenderer();
 }
 
 void Renderer::printError(std::string error)
@@ -64,8 +64,6 @@ int Renderer::render(std::vector<Vertex3> terrainPoints, GLuint vertexArrayObjec
 		vertices[vertexIndex] = (float)terrainPoints[i].x;
 		vertices[vertexIndex + 1] = (float)terrainPoints[i].y;
 		vertices[vertexIndex + 2] = (float)terrainPoints[i].z;
-
-		// std::cout << vertices[vertexIndex + 5] << std::endl;
 	}
 
 	/* Start with the vertex array object */
@@ -87,6 +85,130 @@ int Renderer::render(std::vector<Vertex3> terrainPoints, GLuint vertexArrayObjec
 	shader->use();
 	glBindVertexArray(vertexArrayObject);
 	glDrawArrays(GL_TRIANGLES, 0, terrainPoints.size());
+
+	return 0;
+}
+
+int Renderer::renderText(
+	std::string text,
+	GLfloat x,
+	GLfloat y,
+	GLfloat scale,
+	glm::vec3 color
+)
+{
+	textShader->use();
+	glUniform3f(glGetUniformLocation(textShader->ID, "textColor"), color.x, color.y, color.z);
+	glActiveTexture(GL_TEXTURE0);
+	glBindVertexArray(textVAO);
+
+	std::string::const_iterator c;
+	for(c = text.begin(); c != text.end(); c++)
+	{
+		Character ch = Characters[*c];
+
+		GLfloat xpos = x + ch.Bearing.x * scale;
+		GLfloat ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+
+		GLfloat w = ch.Size.x * scale;
+		GLfloat h = ch.Size.y * scale;
+
+		GLfloat vertices[6][4] = {
+			{xpos, ypos + h, 0.0, 0.0},
+			{xpos, ypos, 0.0, 1.0},
+			{xpos + w, ypos, 1.0, 1.0},
+			{xpos, ypos + h, 0.0, 0.0},
+			{xpos + w, ypos, 1.0, 1.0},
+			{xpos + w, ypos + h, 1.0, 0.0}
+		};
+
+		glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+		glBindBuffer(GL_ARRAY_BUFFER, textVBO);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		x += (ch.Advance >> 6) * scale;
+	}
+
+	glBindVertexArray(0);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	return 0;
+}
+
+int Renderer::initializeTextRenderer()
+{
+	FT_Library ft;
+	if(FT_Init_FreeType(&ft))
+	{
+		printError("Could not init FreeType Library");
+		return -1;
+	}
+
+	FT_Face face;
+	if(FT_New_Face(ft, "/usr/share/fonts/truetype/ubuntu/Ubuntu-C.ttf", 0, &face))
+	{
+		printError("Failed to load font");
+	}
+
+	FT_Set_Pixel_Sizes(face, 0, 48);
+
+	// Load all the characters from 0-128 to the map 'Characters'.
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+	for(GLubyte c = 0; c < 128; c++)
+	{
+		if(FT_Load_Char(face, c, FT_LOAD_RENDER))
+		{
+			printError("Failed to load Glyph");
+			continue;
+		}
+
+		GLuint texture;
+		glGenTextures(1, &texture);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glTexImage2D(
+			GL_TEXTURE_2D,
+			0,
+			GL_RED,
+			face->glyph->bitmap.width,
+			face->glyph->bitmap.rows,
+			0,
+			GL_RED,
+			GL_UNSIGNED_BYTE,
+			face->glyph->bitmap.buffer
+		);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		Character character = {
+			texture,
+			glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
+			glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
+			face->glyph->advance.x
+		};
+
+		this->Characters.insert(std::pair<GLchar, Character>(c, character));
+	}
+
+	FT_Done_Face(face);
+	FT_Done_FreeType(ft);
+
+	/* Initialize VertexBuffer and VertexArray for text rendering.*/
+
+	glGenVertexArrays(1, &textVAO);
+	glGenBuffers(1, &textVBO);
+	glBindVertexArray(textVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, textVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(GLfloat), 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 
 	return 0;
 }
@@ -117,6 +239,7 @@ int Renderer::start(Terrain terrain)
 	GLint projectionLocation = glGetUniformLocation(shader->ID, "projection");
 	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
 
+	// Triangle drawing.
 	GLuint vertexArrayObject;
 	glGenVertexArrays(1, &vertexArrayObject);
 
@@ -126,10 +249,20 @@ int Renderer::start(Terrain terrain)
 	glEnable(GL_DEPTH_TEST);
 	// glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 
+	// Setting text projection.
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glm::mat4 textProjection = glm::ortho(0.0f, static_cast<GLfloat>(this->windowWidth), 0.0f, static_cast<GLfloat>(this->windowHeight));
+	textShader->use();
+	glUniformMatrix4fv(glGetUniformLocation(textShader->ID, "projection"), 1, GL_FALSE, glm::value_ptr(textProjection));
+
 	// FPS counter
 	unsigned int lastTime = SDL_GetTicks();
 	unsigned int frameCount = 0;
 
+	// Background color.
+	glm::vec4 clearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	std::string frameCountText = "";
 	while(this->running)
 	{
 		while(SDL_PollEvent(&(this->currentEvent)) != 0)
@@ -140,15 +273,19 @@ int Renderer::start(Terrain terrain)
 			}
 		}
 
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+		glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
+
 	    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		if(SDL_GetTicks() - lastTime > 1000) {
 			std::cout << "FPS: " << frameCount << std::endl;
+			frameCountText = std::to_string(frameCount);
 			frameCount = 0;
 			lastTime = SDL_GetTicks();
 		}
-
+		// Render Text.
+		this->renderText(frameCountText, 1.0f, (float)windowHeight - 35.0f, 0.8f, glm::vec3(0.5, 0.8f, 0.2f));
+		// Terrain rendering.
 		this->render(terrain.getGeometry(), vertexArrayObject, vertexBufferObject);
 
 		frameCount++;
