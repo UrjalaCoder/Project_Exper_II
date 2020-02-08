@@ -12,3 +12,5 @@ all: $(OBJS)
 	rm -f $(LINK_OBJS)
 	rm -f TextureLoader.o
 	mv $(OBJ_NAME) build/$(OBJ_NAME)
+	# Finally launch the app.
+	./build/$(OBJ_NAME)
