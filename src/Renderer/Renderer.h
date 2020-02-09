@@ -11,9 +11,12 @@
 
 
 /* Include matrix library */
+#ifndef GLM
+#define GLM
 #include "../../libs/glm/glm.hpp"
 #include "../../libs/glm/gtc/matrix_transform.hpp"
 #include "../../libs/glm/gtc/type_ptr.hpp"
+#endif
 
 /* Include the Shader class */
 #include "../Shader/Shader.h"

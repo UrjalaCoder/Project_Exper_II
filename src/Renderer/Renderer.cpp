@@ -320,7 +320,8 @@ int Renderer::start(Terrain terrain)
 		if(((double)(now - lastFrameDrawTick) > frameMillis)) {
 			lastFrameDrawTick = SDL_GetTicks();
 			// Terrain rendering.
-			this->render(terrain.getGeometry(), vertexArrayObject, vertexBufferObject);
+			terrain.calculate();
+			this->render(terrain.getTerrain(), vertexArrayObject, vertexBufferObject);
 			if(wireframe) {
 				glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 			}
