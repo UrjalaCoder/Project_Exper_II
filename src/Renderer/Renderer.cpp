@@ -234,7 +234,7 @@ int Renderer::start(Terrain terrain)
 	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
 
 	glm::mat4 projection(1.0f);
-	projection = glm::perspective(glm::radians(45.0f), (float)this->windowWidth / (float)this->windowHeight, 0.1f, 700.0f);
+	projection = glm::perspective(glm::radians(45.0f), (float)this->windowWidth / (float)this->windowHeight, 0.1f, 800.0f);
 
 	GLint projectionLocation = glGetUniformLocation(shader->ID, "projection");
 	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
@@ -247,7 +247,7 @@ int Renderer::start(Terrain terrain)
 	glGenBuffers(1, &vertexBufferObject);
 
 	glEnable(GL_DEPTH_TEST);
-	// glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+
 
 	// Setting text projection.
 	glEnable(GL_BLEND);
@@ -267,11 +267,11 @@ int Renderer::start(Terrain terrain)
 	unsigned int lastFrameDrawTick, lastUpdateTick = SDL_GetTicks();
 	double frameMillis = (1.0 / frameRate) * 1000;
 	double updateMillis = (1.0 / updateRate) * 1000;
-	std::cout << "frameMillis: " << frameMillis << std::endl;
 
 	// Background color.
 	glm::vec4 clearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	std::string frameCountText = "";
+	bool wireframe = false;
 	while(this->running)
 	{
 		while(SDL_PollEvent(&(this->currentEvent)) != 0)
@@ -279,6 +279,17 @@ int Renderer::start(Terrain terrain)
 			if(this->currentEvent.type == SDL_QUIT)
 			{
 				this->running = false;
+			}
+
+			if(this->currentEvent.type == SDL_KEYDOWN) {
+				if(this->currentEvent.key.keysym.sym == SDLK_w) {
+					wireframe = !wireframe;
+					if(wireframe) {
+						glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+					} else {
+						glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+					}
+				}
 			}
 		}
 		unsigned int now = SDL_GetTicks();
@@ -308,10 +319,16 @@ int Renderer::start(Terrain terrain)
 		// std::cout << renderTick << std::endl;
 		if(((double)(now - lastFrameDrawTick) > frameMillis)) {
 			lastFrameDrawTick = SDL_GetTicks();
-			// Render Text.
-			this->renderText(frameCountText, 1.0f, (float)windowHeight - 20.0f, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
 			// Terrain rendering.
 			this->render(terrain.getGeometry(), vertexArrayObject, vertexBufferObject);
+			if(wireframe) {
+				glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+			}
+			// Render Text.
+			this->renderText(frameCountText, 1.0f, (float)windowHeight - 20.0f, 0.4f, glm::vec3(0.5, 0.8f, 0.2f));
+			if(wireframe) {
+				glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+			}
 			frameCount++;
 			SDL_GL_SwapWindow(this->currentWindow);
 		}
