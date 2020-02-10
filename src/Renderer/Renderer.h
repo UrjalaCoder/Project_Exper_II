@@ -48,7 +48,7 @@ private:
 	bool running = true;
 	void printError(std::string error);
 	std::map<GLchar, Character> Characters;
-	int render(std::vector<Vertex3> terrainPoints, GLuint vertexArrayObject, GLuint vertexBufferObject);
+	int render(std::vector<Vertex3> terrainPoints, std::vector<glm::vec3> terrainNormals, GLuint vertexArrayObject, GLuint vertexBufferObject);
 	int initializeTextRenderer();
 	int renderText(std::string text, GLfloat x, GLfloat y, GLfloat scale, glm::vec3 color);
 public:

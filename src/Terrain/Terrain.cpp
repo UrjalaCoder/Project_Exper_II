@@ -85,25 +85,30 @@ void Terrain::calculate()
 	{
 		for(int x = 0; x < terrain[y].size() - 1; x++)
 		{
+			// Left triangle normal
+			glm::vec3 normalLeft = getNormal(terrain[y][x], terrain[y+1][x], terrain[y+1][x+1]);
 			// Bottom left
 			newTerrain.push_back(terrain[y][x]);
+			newNormals.push_back(normalLeft);
 			// Top left
 			newTerrain.push_back(terrain[y+1][x]);
+			newNormals.push_back(normalLeft);
 			// Top right
 			newTerrain.push_back(terrain[y+1][x+1]);
+			newNormals.push_back(normalLeft);
 
-			// First normal.
-			newNormals.push_back(getNormal(terrain[y][x], terrain[y+1][x], terrain[y+1][x+1]));
+			// Right normal.
+			glm::vec3 normalRight = getNormal(terrain[y][x], terrain[y][x+1], terrain[y+1][x+1]);
 
 			// Bottom left
 			newTerrain.push_back(terrain[y][x]);
+			newNormals.push_back(normalRight);
 			// Bottom right
 			newTerrain.push_back(terrain[y][x+1]);
+			newNormals.push_back(normalRight);
 			// Top right
 			newTerrain.push_back(terrain[y+1][x+1]);
-
-			// Second normal
-			newNormals.push_back(getNormal(terrain[y][x], terrain[y][x+1], terrain[y+1][x+1]));
+			newNormals.push_back(normalRight);
 		}
 	}
 

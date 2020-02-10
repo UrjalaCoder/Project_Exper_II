@@ -55,15 +55,63 @@ void Renderer::printError(std::string error)
 	std::cout << "[ERROR]: " << error << std::endl;
 }
 
-int Renderer::render(std::vector<Vertex3> terrainPoints, GLuint vertexArrayObject, GLuint vertexBufferObject)
+int Renderer::render(std::vector<Vertex3> terrainPoints, std::vector<glm::vec3> terrainNormals, GLuint vertexArrayObject, GLuint vertexBufferObject)
 {
-	GLfloat vertices[terrainPoints.size() * 3];
+	int featureCount = 6;
+	GLfloat vertices[terrainPoints.size() * featureCount];
+	// -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+	//  0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+	//  0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+	//  0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+	// -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+	// -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+	//
+	// -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+	//  0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+	//  0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+	//  0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+	// -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+	// -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
+	//
+	// -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+	// -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+	// -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+	// -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+	// -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+	// -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+	//
+	//  0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+	//  0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+	//  0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+	//  0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+	//  0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+	//  0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+	//
+	// -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+	//  0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+	//  0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+	//  0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+	// -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+	// -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+	//
+	// -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+	//  0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+	//  0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+	//  0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+	// -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+	// -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
+
 	for(int i = 0; i < terrainPoints.size(); i++)
 	{
-		int vertexIndex = i * 3;
+		int vertexIndex = i * featureCount;
 		vertices[vertexIndex] = (float)terrainPoints[i].x;
 		vertices[vertexIndex + 1] = (float)terrainPoints[i].y;
 		vertices[vertexIndex + 2] = (float)terrainPoints[i].z;
+
+		// Normals
+		vertices[vertexIndex + 3] = (float)terrainNormals[i].x;
+		vertices[vertexIndex + 4] = (float)terrainNormals[i].y;
+		vertices[vertexIndex + 5] = (float)terrainNormals[i].z;
 	}
 
 	/* Start with the vertex array object */
@@ -77,7 +125,7 @@ int Renderer::render(std::vector<Vertex3> terrainPoints, GLuint vertexArrayObjec
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 	/* Set vertex attribute data. */
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
 	/* RENDER */
@@ -221,6 +269,11 @@ int Renderer::start(Terrain terrain)
 	double movement = 0.04f;
 
 	shader->use();
+
+	shader->set_vec3("lightPos", glm::vec3((float)800, 100, 100));
+	shader->set_vec3("lightColor", glm::vec3(0.5, 0.5, 0.5));
+	shader->set_vec3("objectColor", glm::vec3(1, 1, 1));
+
 	glm::mat4 model(1.0f);
 	model = glm::rotate(model, glm::radians(-70.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
@@ -228,8 +281,8 @@ int Renderer::start(Terrain terrain)
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
 
 	glm::mat4 view(1.0f);
-	view = glm::translate(view, glm::vec3((float)-middleX, -20.0f, -80.0f));
-
+	view = glm::translate(view, glm::vec3((float)-middleX, -40.0f, -140.0f));
+	// view = glm::translate(view, glm::vec3(0, 0, -3));
 	GLint viewLocation = glGetUniformLocation(shader->ID, "view");
 	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
 
@@ -300,7 +353,6 @@ int Renderer::start(Terrain terrain)
 
 		// Framerate counter
 		if(now - lastTime > 1000) {
-			std::cout << "FPS: " << frameCount << " TICKS: " << updateCount << std::endl;
 			frameCountText = std::to_string(frameCount) + "/" + std::to_string(updateCount);
 			frameCount = 0;
 			updateCount = 0;
@@ -321,7 +373,7 @@ int Renderer::start(Terrain terrain)
 			lastFrameDrawTick = SDL_GetTicks();
 			// Terrain rendering.
 			terrain.calculate();
-			this->render(terrain.getTerrain(), vertexArrayObject, vertexBufferObject);
+			this->render(terrain.getTerrain(), terrain.getNormals(), vertexArrayObject, vertexBufferObject);
 			if(wireframe) {
 				glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 			}
