@@ -59,48 +59,6 @@ int Renderer::render(std::vector<Vertex3> terrainPoints, std::vector<glm::vec3> 
 {
 	int featureCount = 6;
 	GLfloat vertices[terrainPoints.size() * featureCount];
-	// -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	//  0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	//  0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	//  0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	// -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	// -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-	//
-	// -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-	//  0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-	//  0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-	//  0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-	// -0.5f,  0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-	// -0.5f, -0.5f,  0.5f,  0.0f,  0.0f, 1.0f,
-	//
-	// -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-	// -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-	// -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-	// -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-	// -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-	// -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-	//
-	//  0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-	//  0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-	//  0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-	//  0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-	//  0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-	//  0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-	//
-	// -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-	//  0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-	//  0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-	//  0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-	// -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-	// -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-	//
-	// -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-	//  0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-	//  0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-	//  0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-	// -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-	// -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
-
 	for(int i = 0; i < terrainPoints.size(); i++)
 	{
 		int vertexIndex = i * featureCount;
@@ -113,6 +71,13 @@ int Renderer::render(std::vector<Vertex3> terrainPoints, std::vector<glm::vec3> 
 		vertices[vertexIndex + 4] = (float)terrainNormals[i].y;
 		vertices[vertexIndex + 5] = (float)terrainNormals[i].z;
 	}
+
+	Vertex3 lastPoint = terrainPoints.back();
+
+	// std::cout << "Point \n";
+	// std::cout << lastPoint.x << std::endl;
+	// std::cout << lastPoint.y << std::endl;
+	// std::cout << lastPoint.z << std::endl;
 
 	/* Start with the vertex array object */
 
@@ -268,9 +233,11 @@ int Renderer::start(Terrain terrain)
 
 	double movement = 0.04f;
 
+	glm::vec3 lightPos(1300, 100, 300);
+
 	shader->use();
 
-	shader->set_vec3("lightPos", glm::vec3((float)800, 100, 100));
+	shader->set_vec3("lightPos", glm::vec3(lightPos));
 	shader->set_vec3("lightColor", glm::vec3(0.5, 0.5, 0.5));
 	shader->set_vec3("objectColor", glm::vec3(1, 1, 1));
 
@@ -321,12 +288,15 @@ int Renderer::start(Terrain terrain)
 	double frameMillis = (1.0 / frameRate) * 1000;
 	double updateMillis = (1.0 / updateRate) * 1000;
 
+	double cameraMovement = 100.0;
+
 	// Background color.
 	glm::vec4 clearColor(0.0f, 0.0f, 0.0f, 1.0f);
 	std::string frameCountText = "";
 	bool wireframe = false;
 	while(this->running)
 	{
+
 		while(SDL_PollEvent(&(this->currentEvent)) != 0)
 		{
 			if(this->currentEvent.type == SDL_QUIT)
@@ -335,16 +305,33 @@ int Renderer::start(Terrain terrain)
 			}
 
 			if(this->currentEvent.type == SDL_KEYDOWN) {
-				if(this->currentEvent.key.keysym.sym == SDLK_w) {
+				auto keySymbol = this->currentEvent.key.keysym.sym;
+				if(keySymbol == SDLK_w) {
 					wireframe = !wireframe;
 					if(wireframe) {
 						glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 					} else {
 						glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 					}
+				} else if(keySymbol == SDLK_UP) {
+					lightPos = lightPos + glm::vec3(-1.0 * cameraMovement, 0.0f, 0.0f);
+				} else if(keySymbol == SDLK_LEFT) {
+				   	lightPos = lightPos +  glm::vec3(0.0f, -1.0 * cameraMovement, 0.0f);
+			   	} else if(keySymbol == SDLK_RIGHT) {
+				  	lightPos = lightPos + glm::vec3(0.0f, 1.0f * cameraMovement, 0.0f);
+			  	} else if(keySymbol == SDLK_DOWN) {
+				 	lightPos = lightPos + glm::vec3(1.0f * cameraMovement, 0.0f, 0.0f);
+			 	} else if(keySymbol == SDLK_q) {
+				 	lightPos = lightPos + glm::vec3(0, 0, 1.0f * cameraMovement);
+				} else if(keySymbol == SDLK_e) {
+					lightPos = lightPos + glm::vec3(0, 0, -1.0f * cameraMovement);
 				}
 			}
 		}
+
+		//std::cout << "LIGHTPOS: " << std::endl;
+		//std::cout << lightPos.x << ", " << lightPos.y << ", " << lightPos.z << std::endl;
+
 		unsigned int now = SDL_GetTicks();
 
 		glClearColor(clearColor.x, clearColor.y, clearColor.z, clearColor.w);
@@ -371,6 +358,8 @@ int Renderer::start(Terrain terrain)
 		// std::cout << renderTick << std::endl;
 		if(((double)(now - lastFrameDrawTick) > frameMillis)) {
 			lastFrameDrawTick = SDL_GetTicks();
+			shader->use();
+			shader->set_vec3("lightPos", glm::vec3(lightPos));
 			// Terrain rendering.
 			terrain.calculate();
 			this->render(terrain.getTerrain(), terrain.getNormals(), vertexArrayObject, vertexBufferObject);

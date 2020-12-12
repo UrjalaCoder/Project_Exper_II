@@ -26,6 +26,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <map>
+#include <vector>
 
 struct Character {
 	GLuint TextureID;
